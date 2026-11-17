@@ -78,11 +78,14 @@ function translitWord(text: string): string {
   return out;
 }
 
+/** Kirillga o'girilmaydigan qisqartmalar va nomlar. */
+const KEEP = /\b(?:AI|KPI|API|PDF|MFA|MAE|MAPE|CSV|XLSX|DOCX|JSON|ID|URL|IP|SMS|GovMind|Telegram|Keycloak|Webhook|webhook)\b/;
+
 export function latinToCyrillic(input: string): string {
   const text = input.replace(APOSTROPHES, "'");
-  // {placeholder}, URL va /yo'llar o'zgarmasin
+  // {placeholder}, URL, /yo'llar va qisqartmalar o'zgarmasin
   return text
-    .split(/(\{[^}]*\}|https?:\/\/\S+|\/[\w/-]+)/g)
+    .split(new RegExp(`(\\{[^}]*\\}|https?:\\/\\/\\S+|\\/[\\w/-]+|${KEEP.source})`, 'g'))
     .map((part, idx) => (idx % 2 === 1 ? part : translitWord(part)))
     .join('');
 }

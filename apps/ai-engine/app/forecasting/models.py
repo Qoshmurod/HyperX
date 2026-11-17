@@ -73,7 +73,7 @@ def candidates(y: np.ndarray, h: int, m: int) -> list[Fit]:
             key=lambda f: float(np.mean(np.abs(y[2:] - f.fitted[2:]))),
         )
         out.append(best)
-    if m > 1 and len(y) >= 2 * m + 2:
+    if m > 1 and len(y) >= 2 * m:
         best = min(
             (holt_winters(y, h, m, a, b, g) for a, b, g in itertools.product(GRID, (0.05, 0.1), (0.1, 0.3))),
             key=lambda f: float(np.mean(np.abs(y[m:] - f.fitted[m:]))),
@@ -110,15 +110,26 @@ def forecast(series: list[dict], horizon: int, season_length: int = 12, change_p
     if len(values) < 3:
         raise ValueError("at least 3 observations are required")
     y = np.asarray(values)
-    m = season_length if season_length and len(y) >= 2 * season_length + 2 else 0
+    m = season_length if season_length and len(y) >= 2 * season_length else 0
 
-    # Holdout: oxirgi davrlar tarixda yashirilib, usullar shu qismda sinaladi.
+    # Model tanlash: tarixning oxirgi qismi yashirilib, usullar shu qismda sinaladi (holdout).
+    # Mavsumiy model uchun tarix yetmasa, barcha usullar bir qadamli (one-step) xato bo'yicha
+    # bir xil sharoitda taqqoslanadi — eksponensial silliqlashda fitted qiymatlar aynan shunday prognozdir.
     hold = max(1, min(horizon, len(y) // 4))
     train, test = y[:-hold], y[-hold:]
-    scored = []
-    for f in candidates(train, hold, m if len(train) >= 2 * m + 2 else 0):
-        mae, mape = _errors(test, f.forecast[:hold])
-        scored.append((mae, mape, f.method))
+    train_m = m if len(train) >= 2 * m else 0
+    scored: list[tuple[float, float | None, str]] = []
+    validation = "holdout"
+    if m == train_m:
+        for f in candidates(train, hold, train_m):
+            mae, mape = _errors(test, f.forecast[:hold])
+            scored.append((mae, mape, f.method))
+    else:
+        validation = "one_step"
+        window = max(hold, len(y) // 4)
+        for f in candidates(y, 1, m):
+            mae, mape = _errors(y[-window:], f.fitted[-window:])
+            scored.append((mae, mape, f.method))
     scored.sort(key=lambda s: s[0])
     best_mae, best_mape, method = scored[0]
 
@@ -145,6 +156,7 @@ def forecast(series: list[dict], horizon: int, season_length: int = 12, change_p
             "mae": round(best_mae, 3),
             "mape": round(best_mape, 2) if best_mape is not None else None,
             "holdout": hold,
+            "validation": validation,
             "observations": len(y),
             "sigma": round(sigma, 3),
             "compared": [{"method": s[2], "mae": round(s[0], 3)} for s in scored],

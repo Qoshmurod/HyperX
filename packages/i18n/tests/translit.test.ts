@@ -20,6 +20,8 @@ test('basic words', () => {
 test('placeholders and paths are kept', () => {
   assert.equal(latinToCyrillic('Salom, {name}!'), 'Салом, {name}!');
   assert.equal(latinToCyrillic('Havola: /tasks/new'), 'Ҳавола: /tasks/new');
+  assert.equal(latinToCyrillic('AI yordamchi'), 'AI ёрдамчи');
+  assert.equal(latinToCyrillic("KPI ko'rsatkichlari"), 'KPI кўрсаткичлари');
 });
 
 test('dictionaries', async () => {

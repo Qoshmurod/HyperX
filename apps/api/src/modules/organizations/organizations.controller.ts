@@ -128,6 +128,21 @@ export class OrganizationsController {
     });
   }
 
+  /** Topshiriq mas'ulini tanlash uchun: faqat ism va lavozim. */
+  @Get('organizations/:id/members')
+  @RequirePermission('organizations.read')
+  members(@CurrentPrincipal() p: AuthPrincipal, @Param('id', ParseUUIDPipe) id: string) {
+    return this.db.scoped(p, 'organizations.read', async (tx) => {
+      if (!(await one(tx, 'SELECT 1 FROM organization.organizations WHERE id = $1', [id]))) throw new NotFoundException();
+      return rows(
+        tx,
+        `SELECT u.id, u.full_name, m.position FROM iam.organization_memberships m JOIN iam.users u ON u.id = m.user_id
+         WHERE m.organization_id = $1 AND u.status = 'active' ORDER BY u.full_name`,
+        [id],
+      );
+    });
+  }
+
   @Post('organizations')
   @RequirePermission('organizations.manage')
   create(@CurrentPrincipal() p: AuthPrincipal, @Body(new ZodPipe(orgCreate)) body: z.infer<typeof orgCreate>) {

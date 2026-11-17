@@ -43,8 +43,16 @@ def _case(src: str, out: str) -> str:
     return out.upper() if src[0] != src[0].lower() else out
 
 
+_KEEP = re.compile(r"(\b(?:AI|KPI|API|PDF|MFA|MAE|MAPE|CSV|XLSX|DOCX|JSON|ID|URL|IP|GovMind|Telegram)\b|\d{4}-\d{2}-\d{2})")
+
+
 def latin_to_cyrillic(text: str) -> str:
-    text = re.sub("[ʻʼ‘’`´]", "'", text)
+    """Qisqartmalar, nomlar va sanalar o'zgarmaydi."""
+    parts = _KEEP.split(re.sub("[ʻʼ‘’`´]", "'", text))
+    return "".join(p if i % 2 else _translit(p) for i, p in enumerate(parts))
+
+
+def _translit(text: str) -> str:
     res: list[str] = []
     i = 0
     while i < len(text):
