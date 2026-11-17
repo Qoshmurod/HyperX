@@ -1,0 +1,15 @@
+{
+  "name": "govmind-ai",
+  "private": true,
+  "description": "Enterprise AI-powered Government Intelligence and Decision Support Platform",
+  "license": "MIT",
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test:db": "scripts/test-db.sh"
+  }
+}
