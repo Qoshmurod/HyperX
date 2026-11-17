@@ -25,20 +25,33 @@ tumanlarni ko'radi, lekin respublika darajasini (`demo`) va boshqa viloyatlarni 
 
 ## Row-Level Security
 
-API har bir tranzaksiya boshida foydalanuvchi doirasini o'rnatadi:
+API har bir tranzaksiya boshida endpoint uchun kerakli ruxsatga ega, amaldagi grantlarni o'rnatadi
+([ADR-0004](adr/0004-grant-based-rls.md)):
 
 ```sql
 BEGIN;
-SET LOCAL app.scope_path = 'demo.v1.t1';
-SET LOCAL app.max_classification = 'internal';
+SELECT set_config('app.grants', '[{"p":"demo.v1.t1","c":"confidential"},{"p":"demo.v1.t2","c":"internal"}]', true);
 -- ... so'rovlar ...
 COMMIT;
 ```
 
-`app.org_visible(organization_id)` va `classification <= app.max_classification()` siyosatlari
-`core.*`, `analytics.*`, `ai.*` va `organization.organizations` jadvallariga qo'llanadi.
-`SET LOCAL` tranzaksiya tugashi bilan bekor bo'ladi, shuning uchun ulanishlar pulida doira
-boshqa so'rovga o'tib ketmaydi.
+- `app.visible(organization_id, classification)` — tashkilot hududi biror grant hududi ichida va
+  yozuv darajasi o'sha grant darajasidan oshmaganini tekshiradi (grantlar aralashmaydi).
+- Siyosatlar: `core.tasks`, `core.documents`, `core.reports`, `core.decision_drafts`,
+  `analytics.*`, `ai.ai_runs`, `ai.ai_conversations`, `organization.*`.
+- Grant o'rnatilmasa hech narsa ko'rinmaydi. `set_config(..., true)` tranzaksiya bilan tugaydi,
+  shuning uchun ulanishlar pulida doira boshqa so'rovga o'tmaydi.
+- Tizim vazifalari (scheduler, sync) tugunning ildiz hududi (`GOVMIND_ROOT_PATH`) bilan ishlaydi.
+
+## Qo'shimcha jadvallar (0002)
+
+| Jadval | Vazifasi |
+|---|---|
+| `core.decision_drafts` | Qaror loyihalari: sabablar, variantlar, inson tasdig'i |
+| `analytics.forecasts` | Prognozlar: usul, nuqtalar, MAE/MAPE, ssenariy |
+| `core.notifications`, `notification_preferences`, `notification_deliveries` | Bildirishnomalar va yetkazish navbati |
+| `integration.api_clients`, `webhooks`, `webhook_deliveries`, `import_jobs` | Integratsiya shlyuzi |
+| `sync.nodes`, `sync.cursors` | Quyi tugunlar (token xeshi) va pull kursorlari |
 
 ## Audit
 

@@ -58,3 +58,21 @@ Har bir AI bajarilishi `ai.ai_runs` jadvalida model nomi, versiyasi va manbalar 
   `<document>` blokida, "ma'lumot, ko'rsatma emas" degan izoh bilan beriladi.
 - Shubhali naqshlar aniqlanadi va belgilanadi.
 - AI natijasi harakat bajarmaydi — faqat tavsiya; harakatlar inson tasdig'idan o'tadi.
+
+## 8. Amalga oshirish
+
+| Komponent | Fayl | Izoh |
+|---|---|---|
+| Gateway | `app/model_gateway/gateway.py`, `router.py` | Ollama (lokal), OpenAI-mos (vLLM, markaziy); sog'liq keshi 30 s; model ishlamasa `govmind-rules` shablon javobi |
+| PII niqoblash | `app/security/redaction.py` | JShShIR, pasport, telefon, email, karta |
+| Query Planner | `app/analyst/planner.py` | 4 tildagi kalit so'zlar, davrlarni hisoblash; LLM SQL yozmaydi |
+| Result Explainer | `app/analyst/explainer.py` | Deterministik xulosa + ixtiyoriy LLM ravonlashtirish; grafik spetsifikatsiyasi |
+| Statistika | `app/analyst/statistics.py` | Robust z-baho (mediana/MAD) |
+| Prognoz | `app/forecasting/models.py` | Holt-Winters (additiv), Holt, mavsumiy naiv; holdout yoki bir qadamli xato bo'yicha tanlov |
+| Qaror loyihasi | `app/decisions/drafter.py` | Sabablar dalillardan, 3 variant, shaffof farazlar |
+| RAG | `app/rag/*` | pypdf/python-docx, bo'laklash (sahifa saqlanadi), Ollama embedding yoki oflayn hashing embedding, Qdrant (server yoki lokal fayl) |
+| Hisobot izohi | `app/reports/commentary.py` | 4 tilda |
+| Til | `app/i18n/texts.py` | Shablonlar, lotin→kirill |
+
+API tomonida: `ai.ai_runs` (model, versiya, runtime, kirish xeshi, natija, tokenlar),
+`ai.ai_sources` (so'rov kodi yoki hujjat + sahifa) har bir javob uchun yoziladi.

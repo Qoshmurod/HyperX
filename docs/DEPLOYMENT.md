@@ -1,59 +1,106 @@
 # GovMind AI — O'rnatish
 
-## Talablar
+## 1. Talablar
 
-- Docker 24+ va Docker Compose v2
-- Ishlab chiqish uchun: Node.js 22, pnpm 10, Python 3.11+
-- Lokal AI uchun: kamida 16 GB RAM (7B model, 4-bit kvantlash)
+| Tugun | CPU | RAM | Disk | GPU |
+|---|---|---|---|---|
+| Tuman (AI bilan) | 8 yadro | 32 GB | 500 GB SSD | ixtiyoriy (7B model CPU'da sekin ishlaydi) |
+| Viloyat | 16 yadro | 64 GB | 1 TB SSD | 1× 24 GB tavsiya etiladi |
+| Markaz | klaster | — | — | vLLM uchun GPU klasteri |
 
-## Lokal ishlab chiqish
+Dasturiy ta'minot: Linux, Docker 24+ va Docker Compose v2. Zaxira nusxalar uchun alohida disk.
 
-```bash
-cp .env.example .env
-```
+Aniq javob vaqti, foydalanuvchilar soni, RPO/RTO va mavjudlik foizlari pilot yuklama
+o'lchovlaridan keyin SLO sifatida belgilanadi ([pilot rejasi](deployment/pilot-plan.md)).
 
-`.env` ichidagi barcha `change-me` qiymatlarini almashtiring, so'ng infratuzilmani ishga tushiring:
+## 2. Production o'rnatish (bitta tugun)
 
-```bash
-docker compose up -d postgres redis qdrant minio keycloak
-```
-
-Birinchi ishga tushishda PostgreSQL `govmind_app` va `govmind_auditor` rollarini yaratadi va
-migratsiyalarni qo'llaydi (`infrastructure/postgres/init/00-roles.sh`).
+1. Repository'ni serverga ko'chiring va tugun profilidan `.env` tayyorlang:
 
 ```bash
-pnpm install
+cp deployments/local-node/env.example .env
+```
+
+2. `.env` ga [/.env.example](../.env.example) dagi qolgan o'zgaruvchilarni qo'shing va barcha
+   maxfiy qiymatlarni yarating:
+
+```bash
+openssl rand -base64 32
+```
+
+3. Maxfiy fayllar (repository'dan tashqarida saqlanadi):
+
+```bash
+mkdir -p secrets && openssl rand -base64 48 > secrets/backup.key && openssl rand -hex 32 > secrets/metrics_token && chmod 600 secrets/*
+```
+
+   `METRICS_TOKEN` qiymati `secrets/metrics_token` bilan bir xil bo'lishi kerak. Zaxira kaliti
+   alohida, xavfsiz joyda ham saqlanadi — usiz nusxani tiklab bo'lmaydi.
+
+4. TLS sertifikatlari: `infrastructure/nginx/tls/fullchain.pem` va `privkey.pem`
+   (yoki `.env` da `TLS_DIR`).
+
+5. Ishga tushirish:
+
+```bash
+docker compose --profile ai --profile edge --profile backup --profile monitoring up -d --build
+```
+
+6. Lokal LLM modellarini yuklab olish (internet bor paytda yoki oflayn ko'chirilgan fayldan):
+
+```bash
+docker compose exec ollama ollama pull qwen2.5:7b-instruct && docker compose exec ollama ollama pull bge-m3
+```
+
+7. Birinchi administrator:
+   - Keycloak admin konsolida (`/admin`, faqat ichki tarmoqdan) foydalanuvchi yarating.
+   - GovMind bazasida unga `super_admin` rolini bering (faqat birinchi marta, keyin barcha
+     rollar interfeys orqali beriladi):
+
+```bash
+docker compose exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "INSERT INTO iam.users (external_auth_id, username, full_name) VALUES ('pending:admin', 'admin', 'Administrator') RETURNING id"
 ```
 
 ```bash
-pnpm --filter @govmind/api build && pnpm --filter @govmind/api start
+docker compose exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "INSERT INTO iam.user_roles (user_id, role_id, administrative_unit_id, max_classification) SELECT u.id, r.id, a.id, 'secret' FROM iam.users u, iam.roles r, organization.administrative_units a WHERE u.username = 'admin' AND r.code = 'super_admin' AND a.parent_id IS NULL"
 ```
+
+   Hududlar iyerarxiyasi bo'sh bo'lsa, avval respublika hududini qo'shing
+   (`organization.administrative_units`, `level = 'republic'`).
+
+8. Tekshirish: `https://<manzil>/` — kirish sahifasi; `docker compose ps` — barcha servislar
+   `healthy`; Grafana (`127.0.0.1:3002`) — "GovMind AI" dashboard.
+
+## 3. Tugunlarni bog'lash
+
+[deployments/README.md](../deployments/README.md) ga qarang. Tugunlararo kanal VPN yoki mTLS
+orqali bo'lishi kerak; `X-Node-Token` qo'shimcha autentifikatsiya qatlami.
+
+## 4. Lokal ishlab chiqish
 
 ```bash
-pnpm --filter @govmind/web dev
+scripts/dev-up.sh
 ```
+
+## 5. Yangilash
 
 ```bash
-cd apps/ai-engine && pip install -e ".[dev]" && uvicorn app.main:app --reload --port 8000
+git pull && docker compose --profile ai --profile edge --profile backup --profile monitoring up -d --build
 ```
 
-- Web: http://localhost:3000
-- API: http://localhost:3001/api/v1/health, Swagger: http://localhost:3001/api/docs
-- AI engine: http://localhost:8000/health
-
-## Barcha servislar konteynerda
+Yangi migratsiyalar (`database/migrations/NNNN_*.sql`) yangilashdan oldin zaxira nusxa olingach,
+egasi (owner) roli bilan qo'llanadi:
 
 ```bash
-docker compose --profile app --profile ai up -d --build
+docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /govmind/migrations/<fayl>.sql
 ```
 
-## Tugun profillari
+## 6. Zaxira nusxa va tiklash
 
-| Profil | Papka | Tavsif |
-|---|---|---|
-| Tuman tuguni | `deployments/local-node` | Bitta server, lokal AI, offline rejim |
-| Viloyat tuguni | `deployments/regional-node` | Viloyat bo'yicha agregatsiya |
-| Markaziy bulut | `deployments/central-cloud` | Hududlararo analitika, zaxira nusxalar |
+`backup` profili har kuni shifrlangan nusxa oladi. Tiklash sinovi oyiga kamida bir marta:
 
-Har bir profil uchun alohida konfiguratsiya Phase 5 da qo'shiladi. Kubernetes manifestlari
-(`infrastructure/kubernetes`) yuklama talablari asoslangandan keyin.
+```bash
+RESTORE_ADMIN_URL=postgresql://<owner>:<parol>@localhost:5432/postgres BACKUP_DIR=./backups BACKUP_KEY_FILE=./secrets/backup.key infrastructure/backup/restore-test.sh
+```
+
+Batafsil: [falokatdan tiklash](deployment/disaster-recovery.md).
