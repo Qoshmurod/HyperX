@@ -1,0 +1,35 @@
+# Maxfiy sozlamalar — hech qachon commit qilinmaydi
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets/
+
+# Haqiqiy ma'lumotlar va zaxira nusxalar
+data/
+backups/
+*.dump
+*.sql.gz
+
+# Node
+node_modules/
+dist/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
