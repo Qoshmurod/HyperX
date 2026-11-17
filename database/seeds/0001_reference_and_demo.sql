@@ -29,7 +29,11 @@ INSERT INTO iam.permissions (code, description) VALUES
     ('decisions.approve',    'Qaror loyihalarini tasdiqlash'),
     ('audit.read',           'Audit yozuvlarini ko''rish'),
     ('sync.resolve',         'Sinxronizatsiya konfliktlarini hal qilish'),
-    ('integrations.manage',  'Integratsiyalarni boshqarish')
+    ('integrations.manage',  'Integratsiyalarni boshqarish'),
+    ('decisions.create',     'Qaror loyihasini tayyorlash'),
+    ('documents.read',       'Hujjatlarni ko''rish va qidirish'),
+    ('documents.upload',     'Hujjat yuklash'),
+    ('sync.manage',          'Tugunlar va sinxronizatsiyani boshqarish')
 ON CONFLICT (code) DO NOTHING;
 
 -- Rol → ruxsat matritsasi
@@ -37,9 +41,9 @@ INSERT INTO iam.role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM iam.roles r JOIN iam.permissions p ON (
        r.code = 'super_admin'
     OR (r.code IN ('republic_admin', 'region_admin', 'district_admin') AND p.code NOT IN ('audit.read'))
-    OR (r.code = 'leader'   AND p.code IN ('organizations.read','tasks.read','tasks.manage','kpi.read','reports.read','reports.export','reports.approve','ai.use','ai.forecast','decisions.approve'))
-    OR (r.code = 'analyst'  AND p.code IN ('organizations.read','tasks.read','kpi.read','kpi.manage','reports.read','reports.export','ai.use','ai.forecast'))
-    OR (r.code = 'employee' AND p.code IN ('organizations.read','tasks.read','kpi.read','reports.read','ai.use'))
+    OR (r.code = 'leader'   AND p.code IN ('organizations.read','tasks.read','tasks.manage','kpi.read','reports.read','reports.export','reports.approve','ai.use','ai.forecast','decisions.create','decisions.approve','documents.read','documents.upload'))
+    OR (r.code = 'analyst'  AND p.code IN ('organizations.read','tasks.read','kpi.read','kpi.manage','reports.read','reports.export','ai.use','ai.forecast','decisions.create','documents.read','documents.upload'))
+    OR (r.code = 'employee' AND p.code IN ('organizations.read','tasks.read','kpi.read','reports.read','ai.use','documents.read'))
     OR (r.code = 'auditor'  AND p.code IN ('organizations.read','audit.read','reports.read'))
 )
 ON CONFLICT DO NOTHING;
@@ -49,6 +53,7 @@ INSERT INTO sync.ownership_rules (resource_type, owner_level, description) VALUE
     ('iam.roles',                         'central',  'Rollar katalogi markazda'),
     ('organization.organizations',        'region',   'Tashkilotlar viloyat darajasida ro''yxatga olinadi'),
     ('core.tasks',                        'district', 'Topshiriqlar ularni yaratgan tugunga tegishli'),
+    ('analytics.kpi_definitions',         'district', 'KPI ta''riflari tashkilot tugunida'),
     ('analytics.kpi_measurements',        'district', 'KPI natijalari joyida kiritiladi'),
     ('core.reports',                      'district', 'Hisobotlar joyida tayyorlanadi')
 ON CONFLICT (resource_type) DO NOTHING;

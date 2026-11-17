@@ -11,7 +11,7 @@
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
     "sourceMap": true,
-    "types": ["node", "jest"]
+    "types": ["node", "jest", "multer"]
   },
   "include": ["src", "tests"]
 }
