@@ -82,12 +82,13 @@ export class DecisionsController {
   @RequirePermission('decisions.create')
   create(@CurrentPrincipal() p: AuthPrincipal, @RequestLang() lang: Lang, @Body(new ZodPipe(draftBody)) body: z.infer<typeof draftBody>) {
     return this.db.scoped(p, 'decisions.create', async (tx) => {
-      await assertCanAtOrg(tx, p, 'decisions.create', body.organization_id, body.classification);
+      const path = await assertCanAtOrg(tx, p, 'decisions.create', body.organization_id, body.classification);
       const evidence: { query_code: string; rows: unknown[] }[] = [];
       for (const code of body.evidence_queries) {
         const domainPerm = code.startsWith('kpi') ? 'kpi.read' : code.startsWith('reports') ? 'reports.read' : 'tasks.read';
         if (!hasPermission(p, domainPerm)) continue;
-        const data = await this.db.scoped(p, domainPerm, async (t2) => (await runCatalogQuery(this.analytics, t2, code, {})) ?? []);
+        // Dalillar faqat shu tashkilot hududi doirasida.
+        const data = await this.db.scopedTo(p, domainPerm, path, async (t2) => (await runCatalogQuery(this.analytics, t2, code, {})) ?? []);
         evidence.push({ query_code: code, rows: (data as unknown[]) ?? [] });
       }
       const draft = await this.ai.draftDecision({ problem: body.problem, evidence, classification: body.classification, lang });

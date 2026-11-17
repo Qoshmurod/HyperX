@@ -13,6 +13,8 @@ test('basic words', () => {
   assert.equal(latinToCyrillic('Ekspert'), 'Эксперт');
   assert.equal(latinToCyrillic('yer'), 'ер');
   assert.equal(latinToCyrillic('SHAHAR'), 'ШАҲАР');
+  assert.equal(latinToCyrillic("Ma'lumot yo'q"), 'Маълумот йўқ');
+  assert.equal(latinToCyrillic("Yo'l"), 'Йўл');
 });
 
 test('placeholders and paths are kept', () => {

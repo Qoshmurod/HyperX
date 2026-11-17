@@ -69,7 +69,7 @@ export class AiEngineClient {
     return this.call<PlanResult>('/internal/v1/analyst/plan', { question });
   }
 
-  explain(body: { question: string; query_code: string; rows: unknown[]; classification: string; lang: Lang }) {
+  explain(body: { question: string; query_code: string; rows: unknown[]; classification: string; lang: Lang; params?: Record<string, unknown> }) {
     return this.call<ExplainResult>('/internal/v1/analyst/explain', body);
   }
 

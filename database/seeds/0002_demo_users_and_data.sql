@@ -51,7 +51,7 @@ SELECT
     (ARRAY['low','normal','normal','high','critical'])[1 + (n % 5)],
     st,
     dl,
-    CASE WHEN st = 'done' THEN dl + make_interval(days => ((n * 7) % 11) - 6) END,
+    CASE WHEN st = 'done' THEN dl + make_interval(days => ((n * 7) % 11) - 6 + CASE WHEN n > 85 AND n % 3 <> 0 THEN 3 ELSE 0 END) END,
     'a0000000-0000-0000-0000-000000000003',
     dl - interval '20 days'
 FROM (

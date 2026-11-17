@@ -41,6 +41,12 @@ function translitWord(text: string): string {
     const prev = text[i - 1];
     const wordStart = !isLetter(prev) && prev !== "'";
 
+    // "yo'q" = й + ў (yo diftongi emas)
+    if (rest.startsWith("yo'")) {
+      out += applyCase(text[i], 'й');
+      i += 1;
+      continue;
+    }
     // "s'h" — s va h alohida (masalan, Is'hoq)
     if (rest.startsWith("s'h")) {
       out += applyCase(text[i], 'с') + applyCase(text[i + 2], 'ҳ');

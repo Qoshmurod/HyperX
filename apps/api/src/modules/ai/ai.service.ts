@@ -61,7 +61,7 @@ export class AiService {
         return result as unknown[];
       });
       const classification = effectiveClassification(p, permission);
-      const explained = await this.ai.explain({ question, query_code: plan.query_code, rows: data, classification, lang });
+      const explained = await this.ai.explain({ question, query_code: plan.query_code, rows: data, classification, lang, params: plan.params });
       const sources: SourceRef[] = [{ source_type: 'query', query_code: plan.query_code, excerpt: JSON.stringify(plan.params) }];
       const runId = await this.saveRun(p, 'analyze', { question, plan }, explained, { answer: explained.answer, rows: data.length }, explained.confidence, sources);
       return {
