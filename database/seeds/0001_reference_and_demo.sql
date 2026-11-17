@@ -48,15 +48,16 @@ SELECT r.id, p.id FROM iam.roles r JOIN iam.permissions p ON (
 )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO sync.ownership_rules (resource_type, owner_level, description) VALUES
-    ('organization.administrative_units', 'central',  'Hududiy iyerarxiya markazda yuritiladi'),
-    ('iam.roles',                         'central',  'Rollar katalogi markazda'),
-    ('organization.organizations',        'region',   'Tashkilotlar viloyat darajasida ro''yxatga olinadi'),
-    ('core.tasks',                        'district', 'Topshiriqlar ularni yaratgan tugunga tegishli'),
-    ('analytics.kpi_definitions',         'district', 'KPI ta''riflari tashkilot tugunida'),
-    ('analytics.kpi_measurements',        'district', 'KPI natijalari joyida kiritiladi'),
-    ('core.reports',                      'district', 'Hisobotlar joyida tayyorlanadi')
-ON CONFLICT (resource_type) DO NOTHING;
+INSERT INTO sync.ownership_rules (resource_type, owner_level, allow_higher_levels, description) VALUES
+    ('organization.administrative_units', 'central',  false, 'Hududiy iyerarxiya faqat markazda yuritiladi'),
+    ('iam.roles',                         'central',  false, 'Rollar katalogi markazda'),
+    ('organization.organizations',        'region',   true,  'Tashkilotlarni viloyat (yoki markaz) ro''yxatga oladi'),
+    ('core.tasks',                        'district', true,  'Topshiriqni tuman yaratadi; viloyat va markaz ham topshiriq bera oladi'),
+    ('analytics.kpi_definitions',         'district', true,  'KPI ta''riflari tuman yoki yuqori darajada'),
+    ('analytics.kpi_measurements',        'district', false, 'KPI natijalari faqat joyida kiritiladi'),
+    ('core.reports',                      'district', true,  'Hisobotlar o''z darajasida tayyorlanadi')
+ON CONFLICT (resource_type) DO UPDATE SET owner_level = EXCLUDED.owner_level,
+    allow_higher_levels = EXCLUDED.allow_higher_levels, description = EXCLUDED.description;
 
 -- Demo hududlar (sintetik)
 INSERT INTO organization.administrative_units (id, parent_id, level, name, code, path) VALUES

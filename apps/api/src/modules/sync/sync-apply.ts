@@ -91,13 +91,16 @@ export async function authorize(
     const p = e.admin_unit_path ?? '';
     if (!(p === sender.path || p.startsWith(`${sender.path}.`))) return 'event outside sender scope';
   }
-  const rule = await one<{ owner_level: NodeLevel }>(
+  const rule = await one<{ owner_level: NodeLevel; allow_higher_levels: boolean }>(
     tx,
-    'SELECT owner_level FROM sync.ownership_rules WHERE resource_type = $1',
+    'SELECT owner_level, allow_higher_levels FROM sync.ownership_rules WHERE resource_type = $1',
     [e.resource_type],
   );
   if (!rule) return 'no ownership rule';
-  if (rule.owner_level !== sourceLevel) return `only ${rule.owner_level} nodes may write ${e.resource_type}`;
+  const ok =
+    rule.owner_level === sourceLevel ||
+    (rule.allow_higher_levels && LEVEL_RANK[sourceLevel] > LEVEL_RANK[rule.owner_level]);
+  if (!ok) return `${sourceLevel} nodes may not write ${e.resource_type}`;
   return null;
 }
 

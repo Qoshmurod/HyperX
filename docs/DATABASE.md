@@ -68,7 +68,9 @@ COMMIT;
 - Outbox (`sync.sync_events`) biznes o'zgarishi bilan bitta tranzaksiyada yoziladi.
 - Inbox (`sync.inbox_events.event_id` PRIMARY KEY) takroriy hodisani rad etadi.
 - `base_version` mos kelmasa, yozuv ustidan yozilmaydi — `sync.conflicts` ga tushadi.
-- `sync.ownership_rules` har bir ma'lumot turi uchun asosiy yozuvchi darajani belgilaydi.
+- `sync.ownership_rules` har bir ma'lumot turi uchun asosiy yozuvchi darajani belgilaydi; `allow_higher_levels`
+  yuqori darajalarga ham yozishga ruxsat beradi (masalan, viloyat tumanga topshiriq beradi, lekin KPI
+  natijasini faqat tuman kiritadi).
 
 ## Testlar
 

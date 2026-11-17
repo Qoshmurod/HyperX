@@ -69,7 +69,10 @@ zaxira nusxalar.
 - Outbox/Inbox pattern; retry va exponential backoff.
 - Har bir yozuvda `version` (optimistic concurrency); hodisa `base_version` ni olib yuradi.
 - `base_version` qabul qiluvchidagi joriy versiyaga mos kelmasa — konflikt yoziladi, ustidan yozilmaydi.
-- **`last write wins` taqiqlangan.** Har bir ma'lumot turi uchun asosiy yozuvchi tugun (`sync.ownership_rules`) oldindan belgilanadi.
+- **`last write wins` taqiqlangan.** Har bir ma'lumot turi uchun asosiy yozuvchi daraja (`sync.ownership_rules`) oldindan belgilanadi;
+  ayrim turlarda yuqori darajalar ham yoza oladi (yuqoridan pastga topshiriq). Parallel o'zgarish — konflikt.
+- Push: quyi tugun outbox'ini yuqoriga yuboradi; yuqori tugun qabul qilganini o'z yuqorisiga uzatadi.
+  Pull: quyi tugun yuqoridan o'z hududiga tegishli hodisalarni oladi (o'z hodisalari qaytib kelmaydi).
 - Sinxronizatsiya jurnali (`sync.sync_log`).
 
 ## 5. Texnologik stack

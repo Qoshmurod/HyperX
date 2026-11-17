@@ -299,6 +299,22 @@ describe('synchronization', () => {
     expect(res.body.resolved).toBe(true);
   });
 
+  it('accepts top-down tasks from a region node but not region-written KPI measurements', async () => {
+    const n = await api().post('/api/v1/sync/nodes').set(auth('superadmin')).send({ node_id: 'node-v1', level: 'region', administrative_unit_id: '00000000-0000-0000-0000-000000000010' }).expect(201);
+    const taskId = crypto.randomUUID();
+    const task = ev({
+      source_node_id: 'node-v1', resource_id: taskId, operation: 'insert', base_version: null, new_version: 1, admin_unit_path: 'demo.v1.t1',
+      payload: { organization_id: ORG_T1, title: 'Viloyatdan topshiriq', priority: 'normal', status: 'new', classification: 'internal', created_by: USERS.viloyat, __source_level: 'region' },
+    });
+    const kpi = ev({
+      source_node_id: 'node-v1', resource_type: 'analytics.kpi_measurements', resource_id: crypto.randomUUID(), operation: 'insert', base_version: null, new_version: 1,
+      payload: { kpi_definition_id: '12000000-0000-0000-0000-000000000001', organization_id: ORG_T1, period_start: '2030-01-01', actual_value: 1, source: 'x', __source_level: 'region' },
+    });
+    const r = await api().post('/api/v1/sync/events').set('X-Node-Token', n.body.token).send({ events: [task, kpi] }).expect(201);
+    expect(r.body.results.map((x: any) => x.outcome)).toEqual(['applied', 'rejected']);
+    await api().get(`/api/v1/tasks/${taskId}`).set(auth('tuman')).expect(200);
+  });
+
   it('rejects unknown node tokens', async () => {
     await api().post('/api/v1/sync/events').set('X-Node-Token', 'nope').send({ events: [] }).expect(401);
   });
