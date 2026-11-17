@@ -8,38 +8,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   node:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm build
-        env:
-          NEXT_TELEMETRY_DISABLED: 1
-
-  ai-engine:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/ai-engine
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -e ".[dev]"
-      - run: ruff check . && ruff format --check .
-      - run: pytest -q
-
-  database:
+    name: TypeScript (i18n, api, web)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -51,12 +26,74 @@ jobs:
           --health-cmd pg_isready --health-interval 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @govmind/i18n build
+      - run: pnpm typecheck
+      - name: Tests (api integration tests use the postgres service)
+        run: pnpm test
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      - run: pnpm build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+  ai-engine:
+    name: Python (ai-engine)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/ai-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check . && ruff format --check .
+      - run: pytest -q
+
+  database:
+    name: Database security tests and backup/restore
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - run: scripts/test-db.sh
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      - name: Backup and restore drill
+        run: |
+          psql postgresql://postgres:postgres@localhost:5432/postgres -c "CREATE DATABASE drill"
+          for f in database/migrations/*.sql database/seeds/*.sql; do psql -v ON_ERROR_STOP=1 -q postgresql://postgres:postgres@localhost:5432/drill -f "$f"; done
+          openssl rand -base64 48 > "$RUNNER_TEMP/key"
+          BACKUP_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/drill BACKUP_DIR="$RUNNER_TEMP/backups" BACKUP_KEY_FILE="$RUNNER_TEMP/key" infrastructure/backup/backup.sh
+          RESTORE_ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres BACKUP_DIR="$RUNNER_TEMP/backups" BACKUP_KEY_FILE="$RUNNER_TEMP/key" infrastructure/backup/restore-test.sh
+
+  compose:
+    name: Docker Compose config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose --env-file .env.example --profile ai --profile monitoring --profile edge --profile backup config --quiet
 
   secrets:
+    name: Secret scanning
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

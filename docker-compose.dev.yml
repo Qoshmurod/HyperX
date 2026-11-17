@@ -1,0 +1,11 @@
+# Lokal ishlab chiqish uchun qo'shimcha: bazalarni localhost'ga ochadi.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres qdrant minio keycloak
+services:
+  postgres:
+    ports: ["127.0.0.1:5432:5432"]
+  qdrant:
+    ports: ["127.0.0.1:6333:6333"]
+  minio:
+    ports: ["127.0.0.1:9000:9000", "127.0.0.1:9001:9001"]
+  keycloak:
+    command: ["start-dev", "--import-realm"]

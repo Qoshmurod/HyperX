@@ -11,6 +11,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
 -- Ilova roli jadval egasi emas => RLS unga to'liq qo'llanadi. BYPASSRLS berilmaydi.
 CREATE ROLE govmind_app LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD :'app_pw';
 CREATE ROLE govmind_auditor LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD :'auditor_pw';
+-- Keycloak o'z jadvallarini alohida sxemada saqlaydi
+CREATE SCHEMA IF NOT EXISTS keycloak;
 SQL
 
 for f in /govmind/migrations/*.sql; do
