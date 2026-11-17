@@ -10,7 +10,13 @@ export const dynamic = 'force-dynamic';
 
 /** OIDC Authorization Code + PKCE. state/nonce/verifier shifrlangan qisqa muddatli cookie'da. */
 export async function GET() {
-  const cfg = await oidc();
+  let cfg;
+  try {
+    cfg = await oidc();
+  } catch (e) {
+    console.error('[auth] identity provider unavailable:', e instanceof Error ? e.message : e);
+    return NextResponse.redirect(`${config.baseUrl}/login?error=idp`);
+  }
   const verifier = client.randomPKCECodeVerifier();
   const state = client.randomState();
   const nonce = client.randomNonce();

@@ -20,7 +20,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="space-y-4">
           {sp.error === 'not_registered' && <Notice tone="danger">{t('auth.not_registered')}</Notice>}
-          {sp.error && sp.error !== 'not_registered' && <Notice tone="danger">{t('common.error')}</Notice>}
+          {sp.error === 'idp' && <Notice tone="danger">{t('auth.idp_unavailable')}</Notice>}
+          {sp.error === 'api' && <Notice tone="danger">{t('auth.api_unavailable')}</Notice>}
+          {sp.error && !['not_registered', 'idp', 'api'].includes(sp.error) && <Notice tone="danger">{t('auth.login_failed')}</Notice>}
           {sp.expired && <Notice tone="warn">{t('auth.session_expired')}</Notice>}
           <p className="text-sm text-muted">{t('auth.login_hint')}</p>
           <LinkButton href="/auth/login" prefetch={false} className="w-full">

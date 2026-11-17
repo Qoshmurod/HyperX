@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
       expectedNonce: nonce,
     });
     session = toSession(tokens);
-  } catch {
+  } catch (e) {
+    console.error('[auth] callback failed:', e instanceof Error ? e.message : e);
     return NextResponse.redirect(`${config.baseUrl}/login?error=callback`);
   }
 
@@ -35,7 +36,11 @@ export async function GET(req: NextRequest) {
     headers: { Authorization: `Bearer ${session.at}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ type: 'login', user_agent: ua.slice(0, 500) }),
   }).catch(() => null);
-  if (!res || res.status === 403) {
+  if (!res || res.status >= 500) {
+    clearSession(jar);
+    return NextResponse.redirect(`${config.baseUrl}/login?error=api`);
+  }
+  if (res.status === 403) {
     clearSession(jar);
     return NextResponse.redirect(`${config.baseUrl}/login?error=not_registered`);
   }

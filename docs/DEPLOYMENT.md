@@ -104,3 +104,22 @@ RESTORE_ADMIN_URL=postgresql://<owner>:<parol>@localhost:5432/postgres BACKUP_DI
 ```
 
 Batafsil: [falokatdan tiklash](deployment/disaster-recovery.md).
+
+## 7. Muammolarni bartaraf etish
+
+**"Tizimga kirish" bosilganda kirish sahifasiga qaytadi yoki xato chiqadi**
+
+| Xabar | Sabab | Yechim |
+|---|---|---|
+| "Kirish serveri (Keycloak) bilan bog'lanib bo'lmadi" | Keycloak ishlamayapti yoki web unga ulana olmayapti | `docker compose ps keycloak` — `running` bo'lishi kerak; `docker compose logs keycloak`. Web lokal ishga tushirilgan bo'lsa, `OIDC_ISSUER_URL` brauzerda ochilishini tekshiring: `http://localhost:8080/realms/govmind` |
+| "Tizim serveri (API) javob bermayapti" | API yoki PostgreSQL ishlamayapti | `docker compose logs api`, `docker compose ps postgres` |
+| "Hisobingiz GovMind'da ro'yxatdan o'tmagan" | Keycloak'dagi login GovMind'da yo'q | Xodimlar bo'limida xuddi shu login bilan xodim yarating ([DEPLOYMENT](#2-production-ornatish-bitta-tugun), 7-qadam) |
+| "Kirish yakunlanmadi" | Client secret yoki redirect URI mos emas | `.env` dagi `OIDC_CLIENT_SECRET` Keycloak'dagi bilan bir xil; `WEB_BASE_URL` brauzerdagi manzil bilan bir xil bo'lishi kerak |
+
+Web konteyner ichidan Keycloak'ga `OIDC_DISCOVERY_URL` (ichki manzil) orqali ulanadi, issuer esa
+tashqi `OIDC_ISSUER_URL` bilan solishtiriladi. Keycloak `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`
+bilan ishlashi shart.
+
+**Ikki bosqichli tasdiqlash (TOTP).** Birinchi kirishda telefoningizga Google Authenticator,
+Microsoft Authenticator yoki FreeOTP o'rnating va QR-kodni skanerlang. Telefon vaqti to'g'ri
+bo'lishi kerak (avtomatik vaqt yoqilgan).

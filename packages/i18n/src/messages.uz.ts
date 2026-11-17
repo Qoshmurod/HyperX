@@ -27,6 +27,9 @@ export const uz = {
   'auth.login_hint': "Davom etish uchun tashkilotingiz hisobi bilan kiring. Ikki bosqichli tasdiqlash (MFA) majburiy.",
   'auth.not_registered': "Hisobingiz GovMind'da ro'yxatdan o'tmagan yoki faol emas. Administratorga murojaat qiling.",
   'auth.session_expired': 'Sessiya muddati tugadi. Qaytadan kiring.',
+  'auth.idp_unavailable': "Kirish serveri (Keycloak) bilan bog'lanib bo'lmadi. Keycloak ishga tushganini va OIDC sozlamalarini tekshiring yoki administratorga murojaat qiling.",
+  'auth.api_unavailable': "Tizim serveri (API) javob bermayapti. Bir ozdan keyin qayta urinib ko'ring.",
+  'auth.login_failed': "Kirish yakunlanmadi. Qaytadan urinib ko'ring.",
 
   'common.save': 'Saqlash',
   'common.create': 'Yaratish',

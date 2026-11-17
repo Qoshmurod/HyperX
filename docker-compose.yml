@@ -77,6 +77,8 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL}
       KC_HTTP_ENABLED: "true"
+      # Token/JWKS endpointlari ichki manzil (http://keycloak:8080) orqali ham ishlashi uchun
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_PROXY_HEADERS: xforwarded
       KC_HEALTH_ENABLED: "true"
       KC_DB: postgres
@@ -168,6 +170,8 @@ services:
       API_INTERNAL_URL: http://api:3001
       WEB_BASE_URL: ${WEB_BASE_URL}
       OIDC_ISSUER_URL: ${OIDC_ISSUER_URL}
+      # Konteyner ichida "localhost" — konteynerning o'zi; Keycloak'ga ichki tarmoq orqali ulanadi
+      OIDC_DISCOVERY_URL: http://keycloak:8080/realms/govmind
       OIDC_CLIENT_ID: govmind-web
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
       SESSION_SECRET: ${SESSION_SECRET}

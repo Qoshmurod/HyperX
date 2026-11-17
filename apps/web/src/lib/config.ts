@@ -16,6 +16,10 @@ export const config = {
   get oidcIssuer() {
     return req('OIDC_ISSUER_URL');
   },
+  /** Server ichidan Keycloak'ga murojaat manzili (Docker: http://keycloak:8080/realms/govmind). Bo'sh bo'lsa — issuer. */
+  get oidcDiscoveryUrl() {
+    return process.env.OIDC_DISCOVERY_URL || this.oidcIssuer;
+  },
   get oidcClientId() {
     return process.env.OIDC_CLIENT_ID ?? 'govmind-web';
   },

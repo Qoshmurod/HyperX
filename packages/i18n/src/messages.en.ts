@@ -28,6 +28,9 @@ export const en: Record<MessageKey, string> = {
   'auth.login_hint': 'Sign in with your organization account to continue. Two-factor authentication (MFA) is required.',
   'auth.not_registered': 'Your account is not registered in GovMind or is inactive. Contact your administrator.',
   'auth.session_expired': 'Your session has expired. Please sign in again.',
+  'auth.idp_unavailable': "Could not reach the sign-in server (Keycloak). Check that Keycloak is running and the OIDC settings are correct, or contact your administrator.",
+  'auth.api_unavailable': "The system server (API) is not responding. Please try again shortly.",
+  'auth.login_failed': "Sign-in was not completed. Please try again.",
 
   'common.save': 'Save',
   'common.create': 'Create',
